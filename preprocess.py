@@ -61,7 +61,7 @@ class Vocab(object):
         self._feat_dicts = []
 
         for idx in range(10):
-            self._feat_dicts.append(Dict(feats[idx]))
+            self._feat_dicts.append(Dict(feats[idx], initial_entries=['UNK']))
 
         self._char_dict = Dict(chars, initial_entries=['<BOW>', '<EOW>', 'UNK'])
 

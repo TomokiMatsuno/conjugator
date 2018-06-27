@@ -1,6 +1,7 @@
 import dynet as dy
 import numpy as np
 import argparse
+import os
 
 from preprocess import Vocab
 
@@ -15,7 +16,16 @@ argparser.add_argument("--dynet-mem")
 args = argparser.parse_args()
 trainfile, parsefile = args.trainfile, args.parsefile
 
-
+lang = trainfile.split('/')[-1].split('-')[0]
+size = trainfile.split('/')[-1].split('-')[2]
+save_dir = '/saves/' + lang + '-' + size + '/'
+if not os.path.exists(os.curdir + save_dir):
+    os.mkdir(os.curdir + save_dir)
+else:
+    print('the specified directory already exists. Press Y to proceed.')
+    while True:
+        if input() == 'Y':
+            break
 
 data = [[], []]
 
@@ -40,10 +50,10 @@ mdl = model.Model(char_dim=config.char_dim, feat_dim=config.feat_dim, hidden_dim
                   char_size=len(vocab._char_dict.x2i), feat_sizes=[len(fd.x2i) for fd in vocab._feat_dicts])
 
 max_acc = 0
+has_not_been_updated_for = 0
 
 for epc in range(config.epochs):
-    for step in range(10):
-        step = step == 9
+    for step in range(2):
         losses = []
         tot_cor = 0
         tot_loss = 0
@@ -51,8 +61,12 @@ for epc in range(config.epochs):
         ids = [i for i in range(len(data[step]))]
         if isTrain:
             np.random.shuffle(ids)
+        else:
+            with open(os.curdir + save_dir + 'parsed.txt', 'w') as f:
+                pass
 
-        for i in ids:
+
+        for i in ids[:10]:
             d = data[step][i]
             triple = ([vocab._char_dict.x2i[c] for c in d[0]],
                       [vocab._char_dict.x2i[c] for c in d[1]],
@@ -73,13 +87,16 @@ for epc in range(config.epochs):
                 pred_word = ''.join([vocab._char_dict.i2x[c] for c in pred_word_indices[:-1]])
                 if pred_word == d[1]:
                     tot_cor += 1
+                with open(os.curdir + save_dir + 'parsed.txt', 'a') as f:
+                    f.write(d[0] + '\t' + pred_word + '\n')
 
         if not isTrain:
-            acc = tot_cor / len(data[step])
+            acc = tot_cor / len(data[step]) + 1e-10
             print('accuracy:', acc)
             if max_acc < acc:
                 max_acc = acc
                 has_not_been_updated_for = 0
+                mdl._pc.save(os.curdir + save_dir + 'parameters')
             else:
                 has_not_been_updated_for += 1
                 if has_not_been_updated_for > config.quit_after_n_epochs_without_update:

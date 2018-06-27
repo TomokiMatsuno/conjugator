@@ -88,7 +88,7 @@ class Model(object):
         top_recur = utils.biLSTM(self.LSTM_builders, char_embs,
                                  dropout_h=self._pdrop_lstm if isTrain else 0.,
                                  dropout_x=self._pdrop_lstm if isTrain else 0.)
-        key = dy.concatenate_cols(top_recur)
+        key = dy.concatenate_cols(top_recur[1:-1])
 
         feat_embs = []
         for idx in range(len(self.lp_feats)):

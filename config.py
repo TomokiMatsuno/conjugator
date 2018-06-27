@@ -1,9 +1,10 @@
 path2data = '/Users/tomoki/NLP_data/conll2018/task1/all/'
 trainfile = path2data + 'portuguese-train-medium'
 parsefile = path2data + 'portuguese-dev'
-
+savedir = './experiments0627/'
 
 epochs = 100
+quit_after_n_epochs_without_update = 10
 batch_size = 10
 adam = True
 

@@ -8,6 +8,7 @@ from preprocess import Vocab
 import config
 import model
 
+# Iterate through files and receive arguments.
 argparser = argparse.ArgumentParser()
 argparser.add_argument("trainfile")
 argparser.add_argument("parsefile")
@@ -16,6 +17,7 @@ argparser.add_argument("--dynet-mem")
 args = argparser.parse_args()
 trainfile, parsefile = args.trainfile, args.parsefile
 
+# Create a directory for each file.
 lang = trainfile.split('/')[-1].split('-')[0]
 size = trainfile.split('/')[-1].split('-')[2]
 save_dir = '/saves/' + lang + '-' + size + '/'
@@ -27,6 +29,7 @@ else:
         if input() == 'Y':
             break
 
+# Load sentences from training file and validation file.
 data = [[], []]
 
 with open(trainfile, 'r') as file:
@@ -42,13 +45,16 @@ with open(parsefile, 'r') as file:
         data[1].append((s, t, f.split(';')))
         line = file.readline()
 
-
+# Prepare vocabulary. Here, it doesn't add words that appear only in evaluation set.
 vocab = Vocab(data[0])
 vocab.add_parsefile(data[1])
 
+# Instanciate a model.
 mdl = model.Model(char_dim=config.char_dim, feat_dim=config.feat_dim, hidden_dim=config.hidden_dim,
                   char_size=len(vocab._char_dict.x2i), feat_sizes=[len(fd.x2i) for fd in vocab._feat_dicts])
 
+# Train and validate the model.
+# It stops training when the maximum accuracy in validation set does not improve for more than specified epochs.
 max_acc = 0
 has_not_been_updated_for = 0
 
@@ -66,7 +72,9 @@ for epc in range(config.epochs):
                 pass
 
 
-        for i in ids[:10]:
+        for i in ids:
+            # Prepare a triple of the source word's character ids,
+            # the target word's character ids and morphosyntactic features.
             d = data[step][i]
             triple = ([vocab._char_dict.x2i[c] for c in d[0]],
                       [vocab._char_dict.x2i[c] for c in d[1]],
@@ -91,7 +99,7 @@ for epc in range(config.epochs):
                     f.write(d[0] + '\t' + pred_word + '\n')
 
         if not isTrain:
-            acc = tot_cor / len(data[step]) + 1e-10
+            acc = tot_cor / len(data[step])
             print('accuracy:', acc)
             if max_acc < acc:
                 max_acc = acc

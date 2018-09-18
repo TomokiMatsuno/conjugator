@@ -2,14 +2,13 @@ import dynet as dy
 import numpy as np
 import config
 import utils
-from preprocess import Vocab
 
 BOW, EOW = 0, 1
+
 
 class Model(object):
     def __init__(self, char_dim, feat_dim, hidden_dim, char_size, feat_sizes):
         self._global_step = 0
-
 
         self._char_dim = char_dim
         self._feat_dim = feat_dim
@@ -20,11 +19,8 @@ class Model(object):
         if config.adam:
             self._trainer = dy.AdamTrainer(self._pc, config.learning_rate, config.beta_1, config.beta_2, config.epsilon)
         else:
-            # self._trainer = dy.AdadeltaTrainer(self._pc)
             trainer = dy.SimpleSGDTrainer(self._pc, config.learning_rate)
             trainer.set_clip_threshold(config.clip_threshold)
-
-        # self._trainer.set_clip_threshold(1.0)
 
         self.params = dict()
 
@@ -49,19 +45,6 @@ class Model(object):
             self.LSTM_builders.append((f, b))
 
         self.dec_LSTM = dy.VanillaLSTMBuilder(config.layers, hidden_dim, hidden_dim, self._pc)
-        #
-        # f = dy.SimpleRNNBuilder(1, char_dim, hidden_dim, self._pc)
-        # b = dy.SimpleRNNBuilder(1, char_dim, hidden_dim, self._pc)
-        #
-        # self.LSTM_builders.append((f, b))
-        # for i in range(config.layers - 1):
-        #     f = dy.SimpleRNNBuilder(1, 2 * hidden_dim, hidden_dim, self._pc)
-        #     b = dy.SimpleRNNBuilder(1, 2 * hidden_dim, hidden_dim, self._pc)
-        #     self.LSTM_builders.append((f, b))
-        #
-        #
-        #
-        # self.dec_LSTM = dy.SimpleRNNBuilder(1, hidden_dim, hidden_dim, self._pc)
 
         self.MLP = self._pc.add_parameters((hidden_dim, hidden_dim * 3 + char_dim + feat_dim * 10))
         self.MLP_bias = self._pc.add_parameters((hidden_dim))
@@ -106,8 +89,6 @@ class Model(object):
         state = self.dec_LSTM.initial_state()
         idx = 0
         while prev_char != EOW:
-            # feat_embs = dy.cube(feat_embs)
-
             tmp = dy.concatenate([self.lp_c[prev_char], feat_embs, prev_top_recur])
 
             if isTrain:
